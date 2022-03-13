@@ -1,62 +1,35 @@
+/*
+ * Data:                2022-03-13
+ * Autor:               Magdalena Żołnierek & Karol Waligóra
+ * Kompilacja:          $ g++ -o server5 server5.cpp -pthread
+ * Uruchamianie:        $ ./server4 <numer portu> 
+ */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h> /* socket() */
-#include <netinet/in.h> /* struct sockaddr_in */
-#include <arpa/inet.h>  /* inet_ntop() */
-#include <unistd.h>     /* close() */
+#include <sys/socket.h> 
+#include <netinet/in.h> 
+#include <arpa/inet.h>  
+#include <unistd.h>     
 #include <string.h>
 #include <pthread.h>
 #include <dirent.h>
 #include <errno.h>
 #include <iostream>
-#include <vector>
-#include <algorithm>
 #include <sstream>
 #include <sys/stat.h>
+#include <fstream>
+
+#define MAX_BUFF 30000
+#define MAX_RESP 35000
 
 using namespace std;
 
 int initServer(int port);
 void* threadFunc(void* new_fd);
+void generate_html();
+
 DIR* dir;
-
 char response[512];
-
-void generate_html() {
-
-    strcpy(response, "HTTP/1.0 200 OK \r\n");
-    strcat(response, "Content-Type: text/html\r\n");
-    strcat(response, "Content-Length: 512\r\n\n");
-    strcat(response, "<html><body><center>");
-
-    struct dirent* dr;
-
-    if((dir = opendir("img/")) == NULL ){
-        perror("opendir error");
-        exit(EXIT_FAILURE);
-    }
-    
-    while((dr = readdir(dir)) != NULL) {
-        if(!strcmp(dr->d_name, ".") || !strcmp(dr->d_name, "..")) {
-            continue;
-        } else if (strstr(dr->d_name, ".jpg") != NULL ||
-                    strstr(dr->d_name, ".jpeg") != NULL ||
-                    strstr(dr->d_name, ".png") != NULL ||
-                    strstr(dr->d_name, ".gif") != NULL)
-        {
-            strcat(response, "<img src='");
-            strcat(response, dr->d_name);
-            strcat(response, "'><br>");
-        } else {
-            continue;
-        }
-    }
-    
-    strcat(response, "</center></body></html>");
-    response[strlen(response)] = '\0';
-    closedir(dir);
-
-}
 
 int main(int argc, char* argv[]) {
     int server_fd;
@@ -74,6 +47,7 @@ int main(int argc, char* argv[]) {
 
     server_fd = initServer(server_port);
 
+    //generate root request content
     generate_html();
 
     while(true) {
@@ -81,11 +55,8 @@ int main(int argc, char* argv[]) {
             perror("accept() error");
             exit(EXIT_FAILURE);
         }
-        cout << "[SERVER] New connection." << endl;
 
-        //Client service thread
         pthread_t client_thread;
-
         
         if (pthread_create(&client_thread, NULL, threadFunc, &new_fd) == -1) {
             perror("pthread_create() error");
@@ -136,6 +107,43 @@ int initServer(int port) {
     return server_fd;
 }
 
+void generate_html() {
+
+    strcpy(response, "HTTP/1.0 200 OK \r\n");
+    strcat(response, "Content-Type: text/html\r\n");
+    strcat(response, "Content-Length: 512\r\n\n");
+    strcat(response, "<html><body><center>");
+
+    struct dirent* dr;
+
+    if((dir = opendir("img/")) == NULL ){
+        perror("opendir error");
+        exit(EXIT_FAILURE);
+    }
+    
+    //read files and generate response content
+    while((dr = readdir(dir)) != NULL) {
+        if(!strcmp(dr->d_name, ".") || !strcmp(dr->d_name, "..")) {
+            continue;
+        } else if (strstr(dr->d_name, ".jpg") != NULL ||
+                    strstr(dr->d_name, ".jpeg") != NULL ||
+                    strstr(dr->d_name, ".png") != NULL ||
+                    strstr(dr->d_name, ".gif") != NULL)
+        {
+            strcat(response, "<img src='");
+            strcat(response, dr->d_name);
+            strcat(response, "'><br>");
+        } else {
+            continue;
+        }
+    }
+    
+    strcat(response, "</center></body></html>");
+    response[strlen(response)] = '\0';
+    closedir(dir);
+
+}
+
 
 void* threadFunc(void* new_fd) {
     int fd = *(int *)new_fd;
@@ -176,50 +184,61 @@ void* threadFunc(void* new_fd) {
             perror("write() error");
             exit(EXIT_FAILURE);
         }
-        cout << response << endl;
     } else {
-        char *sendbuf;
-        FILE *requested_file;
         
-        char resp[2048];
-
+        //save filename
         char filename[256];
         strcpy(filename, "img/");
         strcat(filename, url+1);
         filename[strlen(filename)] = '\0';
-        cout << "plik: " << filename <<endl;
 
-        if ((requested_file = fopen(filename, "rb")) == NULL) {
-            perror("fopen error()");
-            exit(EXIT_FAILURE);
-        }
-        fseek(requested_file, 0, SEEK_END);
-        int fileLength = ftell(requested_file);
-        rewind(requested_file);
+        //find file extension
+        string fileext = string(url);
+        int pos = fileext.find_last_of(".");
+        fileext = fileext.substr(pos+1);
 
-        sendbuf = (char*)malloc(sizeof(char)*fileLength);
-        size_t result = fread(sendbuf, 1, fileLength, requested_file);
-        strcpy(resp, "HTTP/1.0 200 OK \r\n");
-        strcat(resp, "Content-Type: image/jpeg\r\n");
-        strcat(resp, "Content-Transfer-Encoding: binary\r\n");
-        strcat(resp, "Content-Length: 30000\r\n\n");
-        strcat(resp, "<html><head><title>File</file></head><body>");
-        cout << "length: " << fileLength << endl;
-
-        if(result < 0) {
-            perror("fread error");
-            exit(EXIT_FAILURE);
+        if(fileext == "jpg") {
+            fileext = "jpeg";
         }
 
-        strcat(resp, sendbuf);
-        strcat(resp, "</body></html>");
-        resp[strlen(resp)] = '\0';
+        //open image file
+        std::ifstream stream;
+        stream.open(filename, std::ifstream::binary);
 
-        write(fd, resp, result);
-        fclose(requested_file);
+        if(stream.is_open()) {
+            char buffer[MAX_BUFF];
+            stream.read(buffer, sizeof(char) * MAX_BUFF);
+            int imageSize = (int)stream.gcount();
+
+            char resp[MAX_RESP];
+
+            string sHeader = "HTTP/1.0 200 OK \r\nContent-Type: image/" + fileext + "\r\nContent-Transfer-Encoding: binary\r\nContent-Length: " + std::to_string(imageSize) + "\r\n\n";
+            int sHeaderSize = (int)sHeader.size();
+
+            for (int i=0 ; i < sHeaderSize; i++ ) {
+                resp[i] = sHeader[i];
+            }
+
+            for (int i = sHeaderSize; i < sHeaderSize + imageSize && i < MAX_BUFF; i++){
+                resp[i] = buffer[i - sHeaderSize];
+            }
+            
+            if (write(fd, resp, sizeof(resp))== -1){
+                perror("write() error");
+                exit(EXIT_FAILURE);
+            }
+
+            stream.close();
+
+            memset(&buffer, 0, sizeof(buffer));
+            memset(&resp, 0, sizeof(resp));
+        } else {
+            if(write(fd, response, sizeof(response)) == -1){
+                perror("write() error");
+                exit(EXIT_FAILURE);
+            }
+        }
     }
-
-
 
     return 0;
 }

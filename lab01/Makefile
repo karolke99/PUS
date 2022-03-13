@@ -1,11 +1,12 @@
-all: client1 server1 client2 server2 client3 server3 server4 
+all: client1 server1 client2 server2 client3 server3 server4  server5
 
 clean:
 	@rm -rf \
 	01/client1 01/server1 \
 	02/client2 02/server2 \
 	03/client3 03/server3 \
-	04/server4 
+	04/server4 \
+	05/server5
 
 client1:
 	gcc 01/client1.c -o 01/client1
@@ -24,3 +25,6 @@ server3:
 
 server4:
 	g++ -o 04/server4 04/server4.cpp
+
+server5:
+	g++ -o 05/server5 05/server5.cpp -pthread
