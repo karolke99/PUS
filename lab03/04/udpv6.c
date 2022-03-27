@@ -17,7 +17,6 @@
 #include "checksum.h"
 
 #define SOURCE_PORT 5050
-#define SOURCE_ADDRESS "fe80::215:5dff:fe95:684a"
 
 int main(int argc, char** argv) {
     if (argc != 3) {
