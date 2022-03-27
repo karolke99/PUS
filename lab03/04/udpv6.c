@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#ifndef __USE_BSD
+#define __USE_BSD
+#endif
+
 #include <netinet/ip.h>
 #include <netinet/udp.h>
 #include <arpa/inet.h>
@@ -11,15 +16,8 @@
 #include <error.h>
 #include "checksum.h"
 
-/* Struktura pseudo-naglowka (do obliczania sumy kontrolnej naglowka UDP): */
-struct phdr {
-    struct in_addr ip_dst;
-    unsigned char unused;
-    unsigned char protocol;
-    unsigned short length;
-
-};
-
+#define SOURCE_PORT 5050
+#define SOURCE_ADDRESS "fe80::215:5dff:fe95:684a"
 
 int main(int argc, char** argv) {
     if (argc != 3) {
@@ -45,15 +43,10 @@ int main(int argc, char** argv) {
 
     int offset = 6;
 
-    /* Bufor na naglowek UDP oraz pseudo-naglowek: */
-    unsigned char datagram[sizeof(struct udphdr) + sizeof(struct phdr)] = {0};
+    /* Bufor na naglowek UDP: */
+    unsigned char datagram[sizeof(struct udphdr)] = {0};
 
-    struct udphdr *udp_header = (struct udphdr *)(datagram);
-    struct phdr *pseudo_header = (struct phdr *)(datagram + sizeof(struct udphdr));
-
-    /* Zmienna wykorzystywana do obliczenia sumy kontrolnej: */
-    unsigned short checksum;
-
+    struct udphdr *udp_header = (struct udphdr *) datagram;
     
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -99,24 +92,9 @@ int main(int argc, char** argv) {
     /* Za wypełnienie pól nagłówka IP odpowiedzialny jest system oepracyjny */
 
     /* Port docelowy (z argumentu wywolania): */
+    udp_header->uh_sport = htons(SOURCE_PORT);
     udp_header->uh_dport = htons(atoi(argv[2]));
     udp_header->uh_ulen = htons(sizeof(struct udphdr));
-
-    pseudo_header->ip_dst.s_addr = ((struct sockaddr_in*)rp->ai_addr)->sin_addr.s_addr;
-    pseudo_header->unused = 0;
-    pseudo_header->protocol = IPPROTO_UDP;
-    pseudo_header->length = udp_header->uh_ulen;
-    
-    udp_header->uh_sum = 0;
-
-    checksum = internet_checksum((unsigned short *)udp_header,
-                                    sizeof(struct udphdr)
-                                    + sizeof(struct phdr)
-                                );
-    
-    udp_header->uh_sum = (checksum == 0) ? 0xffff : checksum;
-
-    
 
     /* Wysylanie datagramow co 1 sekunde: */
     for (;;) {

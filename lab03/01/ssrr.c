@@ -125,4 +125,3 @@ int main(int argc, char** argv) {
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
->>>>>>> 0c4490a7cd85117d22ba88b434005463d8f5ad7f
