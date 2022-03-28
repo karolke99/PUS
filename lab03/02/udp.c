@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     unsigned short          checksum;
 
     /* Bufor na naglowek IP, naglowek UDP oraz pseudo-naglowek: */
-    unsigned char           datagram[sizeof(struct udphdr)
+    unsigned char           datagram[sizeof(struct ip) + sizeof(struct udphdr)
                                      + sizeof(struct phdr)] = {0};
 
     /* Wskaznik na naglowek IP (w buforze okreslonym przez 'datagram'): */
