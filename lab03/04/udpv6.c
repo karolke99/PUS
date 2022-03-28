@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <error.h>
-#include "checksum.h"
 
 #define SOURCE_PORT 5050
 
@@ -90,7 +89,6 @@ int main(int argc, char** argv) {
     
     /* Za wypełnienie pól nagłówka IP odpowiedzialny jest system oepracyjny */
 
-    /* Port docelowy (z argumentu wywolania): */
     udp_header->uh_sport = htons(SOURCE_PORT);
     udp_header->uh_dport = htons(atoi(argv[2]));
     udp_header->uh_ulen = htons(sizeof(struct udphdr));
@@ -100,11 +98,6 @@ int main(int argc, char** argv) {
 
         fprintf(stdout, "Sending UDP...\n");
 
-        /*
-         * Prosze zauwazyc, ze pseudo-naglowek nie jest wysylany
-         * (ale jest umieszczony w buforze za naglowkiem UDP dla wygodnego
-         * obliczania sumy kontrolnej):
-         */
         retval = sendto(
                      sockfd,
                      datagram, sizeof(struct udphdr),
