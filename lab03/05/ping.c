@@ -14,7 +14,7 @@
 #include <time.h>
 #include "checksum.h"
 
-#define MESSAGE_SIZE 32
+#define MESSAGE_SIZE 16
 #define ECHO_MESS_COUNT 4
 
 void echo(const char* destination, int childpid);
