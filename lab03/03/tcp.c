@@ -1,9 +1,3 @@
-/********************/
-/*  udp.c modified  */
-/*    by Magda      */
-/*   30.03.2022     */
-/********************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
