@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     time_t rawtime;
     struct tm* timeinfo;
 
-    if((listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP) == -1)) {
+    if((listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == -1) {
         perror("socket() error");
         exit(EXIT_FAILURE);
     }
@@ -68,6 +68,8 @@ int main(int argc, char** argv) {
         perror("listen()");
         exit(EXIT_FAILURE);
     }
+
+    printf("Server is listening for incoming connection...\n");
 
     while(1) {
         connfd = accept(listenfd, NULL, 0);
