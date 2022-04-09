@@ -15,10 +15,6 @@
 #define BUFF_SIZE 256
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        fprintf(stderr, "Invocation: %s <IP_ADDRESS> <PORT>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
 
     int sockfd;
     int retval;
@@ -28,8 +24,11 @@ int main(int argc, char** argv) {
     struct sctp_status status;
     struct sctp_event_subscribe events;
     struct sctp_sndrcvinfo sndrcvinfo;
-    //struct sockaddr_in server_addr;
     struct addrinfo hints, *result;
+    if (argc != 3) {
+        fprintf(stderr, "Invocation: %s <IP_ADDRESS> <PORT>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
     char buffer[BUFF_SIZE];
 
@@ -50,7 +49,8 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    if((sockfd = socket(result->ai_family, result->ai_socktype, IPPROTO_SCTP)) == -1){
+    sockfd = socket(result->ai_family, result->ai_socktype, IPPROTO_SCTP);
+    if(sockfd == -1) {
         perror("socket() error");
         exit(EXIT_FAILURE);
     }
@@ -60,24 +60,24 @@ int main(int argc, char** argv) {
     initmsg.sinit_max_instreams = 4;
     initmsg.sinit_max_attempts = 5;
 
-    if(setsockopt(sockfd, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(initmsg)) != 0) {
+    retval = setsockopt(sockfd, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(initmsg));
+    if(retval != 0) {
         perror("setsockopt() error");
         exit(EXIT_FAILURE);
     }
 
-    if(connect(sockfd,result->ai_addr, result->ai_addrlen) == -1) {
+    if(connect(sockfd, result->ai_addr, result->ai_addrlen) == -1) {
         perror("connect() error");
         exit(EXIT_FAILURE);
     }
 
     memset(&events, 0, sizeof(events));
     events.sctp_data_io_event = 1;
-
-    setsockopt(sockfd, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events));
-
-    getsockopt(sockfd, IPPROTO_SCTP, SCTP_STATUS, (void *)&status, (socklen_t *)sizeof(status));
+    int events_len = sizeof(events);
+    setsockopt(sockfd, IPPROTO_SCTP, SCTP_EVENTS, &events, events_len);
+    int status_len = sizeof(status);
+    getsockopt(sockfd, IPPROTO_SCTP, SCTP_STATUS, &status, (socklen_t *)&status_len);
     
-    sleep(1);
 
     printf("================================================\n");
     printf("ID: %d\n", status.sstat_assoc_id);
@@ -86,19 +86,17 @@ int main(int argc, char** argv) {
     printf("Out streams: %d\n", status.sstat_outstrms);
     printf("================================================\n");
 
-    for (;;) 
-    {
+    for (int i = 0; i < 2; i++) 
+    {   
+        sleep(1);
         memset(buffer, 0, sizeof(buffer));
         retval = sctp_recvmsg(sockfd, (void *) buffer, BUFF_SIZE,(struct sockaddr *) NULL, 0, &sndrcvinfo, &msg_flags);
 
         if (retval > 0)
 	    {
             buffer[retval] = '\0';
-            printf ("(Nr strumienia: %d) %s\n", sndrcvinfo.sinfo_stream, buffer);
-        } else if(retval == 0) {
-            close(sockfd);
-            exit(EXIT_SUCCESS);
+            printf ("Stream %d : %s\n", sndrcvinfo.sinfo_stream, buffer);
         }
     }
-
+    exit(EXIT_SUCCESS);
 }

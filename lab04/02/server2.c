@@ -76,15 +76,14 @@ int main(int argc, char** argv) {
         if (connfd == -1) {
             perror("accept()");
             exit(EXIT_FAILURE);
+        } else {
+            printf("Sending current date and time.\n");
         }
 
-        printf("Sending current date.. ");
-        
         memset(&buffer, 0, sizeof(buffer));
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         strftime(buffer, sizeof(buffer), "%Y-%m-%d", timeinfo);
-        printf("%s", buffer);
 
         retval = sctp_sendmsg(connfd, buffer, (size_t)strlen(buffer), NULL, 0,0,0,0,0,0);
         if(retval == -1) {
@@ -92,7 +91,7 @@ int main(int argc, char** argv) {
             exit(EXIT_FAILURE);
         }
 
-        printf("Sending current time..");
+        sleep(1);
         
         memset(&buffer, 0, sizeof(buffer));
         strftime(buffer, sizeof(buffer), "%H:%M:%S", timeinfo);
@@ -106,5 +105,4 @@ int main(int argc, char** argv) {
 
     close(listenfd);
     exit(EXIT_SUCCESS);
-
 }
