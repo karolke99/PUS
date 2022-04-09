@@ -14,7 +14,7 @@ server1:
 	gcc -o 01/server1 01/server1.c
 
 server2:
-	gcc -o 02/server2 02/server2.c -lsctp
+	gcc -o 02/server2 02/server2.c -lsctp -Wall
 
 client2:
 	gcc -o 02/client2 02/client2.c -lsctp -Wall

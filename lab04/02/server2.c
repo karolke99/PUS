@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     time_t rawtime;
     struct tm* timeinfo;
 
-    if((listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == -1) {
+    if((listenfd = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP)) == -1) {
         perror("socket() error");
         exit(EXIT_FAILURE);
     }
@@ -71,21 +71,20 @@ int main(int argc, char** argv) {
 
     printf("Server is listening for incoming connection...\n");
 
-    while(1) {
+    for(;;) {
         connfd = accept(listenfd, NULL, 0);
         if (connfd == -1) {
             perror("accept()");
             exit(EXIT_FAILURE);
         }
 
-        sleep(1);
-
-        printf("Sending current date..\n");
+        printf("Sending current date.. ");
         
         memset(&buffer, 0, sizeof(buffer));
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         strftime(buffer, sizeof(buffer), "%Y-%m-%d", timeinfo);
+        printf("%s", buffer);
 
         retval = sctp_sendmsg(connfd, buffer, (size_t)strlen(buffer), NULL, 0,0,0,0,0,0);
         if(retval == -1) {
@@ -93,7 +92,7 @@ int main(int argc, char** argv) {
             exit(EXIT_FAILURE);
         }
 
-        printf("Sending current time..\n");
+        printf("Sending current time..");
         
         memset(&buffer, 0, sizeof(buffer));
         strftime(buffer, sizeof(buffer), "%H:%M:%S", timeinfo);
