@@ -13,7 +13,7 @@
 #include <time.h>
 
 #define BUFF_SIZE 256
-#define NUM_STREAMS 5
+#define NUM_STREAMS 3
 
 int main(int argc, char** argv) {
     if (argc != 3) {
@@ -30,7 +30,6 @@ int main(int argc, char** argv) {
 
     struct sctp_initmsg initmsg;
     struct sctp_sndrcvinfo sndrcvinfo;
-    //struct sctp_status status;
     struct sctp_event_subscribe events;
 
     char buffer[BUFF_SIZE];
@@ -67,11 +66,6 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    if(listen(listenfd, 5) == -1) {
-        perror("listen() error");
-        exit(EXIT_FAILURE);
-    }
-
     memset(&events, 0, sizeof(events));
     events.sctp_data_io_event = 1;
     retval = setsockopt(listenfd, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events));
@@ -80,22 +74,20 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    //int status_len = sizeof(status);
-    //retval = getsockopt(listenfd, IPPROTO_SCTP, SCTP_STATUS, &status, (socklen_t*)&status_len);
-    if(retval != 0) {
-        perror("getsockopt() error");
+    if(listen(listenfd, 5) == -1) {
+        perror("listen() error");
         exit(EXIT_FAILURE);
     }
 
     while(1) {
 
-        memset(&buffer, 0, sizeof(buffer));
+        memset(buffer, 0, sizeof(buffer));
         if(mode) {
             current_stream = send_stream;
-            if((send_stream+1) == NUM_STREAMS) {
+            if((send_stream + 1) == NUM_STREAMS) {
                 send_stream = -1;
             }
-            send_stream++;
+            ++send_stream;
         }
 
         retval = sctp_recvmsg(listenfd, buffer, BUFF_SIZE, &clientaddr, &clientaddr_len, &sndrcvinfo, NULL);
@@ -103,13 +95,13 @@ int main(int argc, char** argv) {
             perror("sctp_recvmsg() error");
             exit(EXIT_FAILURE);
         }
-        printf("===========================================");
+        printf("===========================================\n");
         printf("Stream number: %d\n", current_stream);
         printf("ID: %d\n", sndrcvinfo.sinfo_assoc_id);
         printf("SSN: %d\n", sndrcvinfo.sinfo_ssn);
-        printf("===========================================");
-        
-        retval = sctp_sendmsg(listenfd, buffer, BUFF_SIZE, &clientaddr, clientaddr_len, 0, 0, current_stream, 0, 0);
+        printf("===========================================\n");
+
+        retval = sctp_sendmsg(listenfd, (void*)buffer, BUFF_SIZE, &clientaddr, clientaddr_len, 0, 0, current_stream, 0, 0);
         if(retval == -1){
             perror("sctp_sendmsg() error");
             exit(EXIT_FAILURE);
