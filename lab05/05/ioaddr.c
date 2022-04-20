@@ -18,6 +18,9 @@ int main(int argc, char** argv) {
 
     struct ifreq ifr;
     struct ifreq helper;
+
+    struct sockaddr_in *temp;
+
     memset(&ifr, 0, sizeof(struct ifreq));
     strcpy(ifr.ifr_name, argv[1]);
 
@@ -58,7 +61,7 @@ int main(int argc, char** argv) {
         }
         
         ifr.ifr_addr.sa_family = AF_INET;
-        struct sockaddr_in *temp = (struct sockaddr_in*)&ifr.ifr_addr;
+        temp = (struct sockaddr_in*)&ifr.ifr_addr;
 
         ifr.ifr_netmask.sa_family = AF_INET;
 
