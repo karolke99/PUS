@@ -15,7 +15,7 @@
  * Program wymaga uprawnien roota.
  */
 
-#define BUFF_SIZE 16384
+#define BUFF_SIZE 4096
 
 int main(int argc, char** argv) {
 
@@ -26,15 +26,14 @@ int main(int argc, char** argv) {
     struct sockaddr_nl      sa;     /* Struktura adresowa */
     struct nlmsghdr         *nh;    /* Wskaznik na naglowek Netlink. */
     struct ifaddrmsg        *ia;    /* Wskaznik na naglowek rodziny. */
-    struct nlmsghdr         *nh_response; /*Wskaznik na naglowek odpoweidzi. */
+    struct nlmsghdr *nh_response;
 
     /* Bufor dla wysylanego komunikatu: */
     void                    *request;
     int                     request_size;
 
     /*Bufor odbieranego komunikatu */
-    void *response;
-    int response_size;
+    char response[BUFF_SIZE];
 
     if (argc != 5) {
         fprintf(
@@ -112,7 +111,7 @@ int main(int argc, char** argv) {
      */
 
     nh->nlmsg_type          =       action; /* RTM_NEWADDR lub RTM_DELADDR */
-    nh->nlmsg_flags         =       NLM_F_REQUEST;
+    nh->nlmsg_flags         =       NLM_F_REQUEST | NLM_F_ACK;
     nh->nlmsg_seq           =       1;
     nh->nlmsg_pid           =       getpid();
 
@@ -171,29 +170,43 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    free(request);
+    socklen_t socklen = sizeof(struct sockaddr_nl);
 
-    response_size = BUFF_SIZE;
-    response = malloc(response_size);
+    retval = recvfrom(sockfd, response, BUFF_SIZE, 0, (struct sockaddr*)&sa, &socklen);
     
-    if (response == NULL) {
-        fprintf(stderr, "malloc() failed!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    retval = recvfrom(sockfd, response, response_size, 0);
     if(retval == -1) {
         perror("recvfrom() error");
         exit(EXIT_FAILURE);
     }
 
-    printf("Received: \n");
-    nh_response = (struct nlmshgdr*)response;
+    printf("Received: ");
+
+    nh_response = (struct nlmsghdr*)response;
+
+
+    if(nh_response->nlmsg_type == NLMSG_ERROR) {
+        struct nlmsgerr *error = (struct nlmsgerr*)NLMSG_DATA(response);
+        switch(error->error) {
+            case 0:
+                printf("Success\n");
+                break;
+            case -EADDRNOTAVAIL:
+                printf("Address not available (deleted)\n");
+                break;
+            case -EEXIST:
+                printf("Address already exist\n");
+                break;
+            case -EPERM:
+                printf("Not allowed\n");
+                break;
+            default:
+                printf("%s\n", strerror(error->error));
+                break;
+        }
+    }
     
 
-
-
-
+    free(request);
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
