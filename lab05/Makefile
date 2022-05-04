@@ -1,10 +1,11 @@
-all: iolist proclist ioarp ioaddr
+all: iolist proclist ioarp iomac ioaddr
 
 clean:
 	@rm -rf \
 	01/iolist \
 	02/proclist \
 	03/ioarp \
+	04/iomac \
 	05/ioaddr
 	
 iolist:
@@ -15,6 +16,9 @@ proclist:
 	
 ioarp:
 	gcc -o 03/ioarp 03/ioarp.c
+
+iomac:
+	gcc -o 04/iomac 04/iomac.c
 
 ioaddr:
 	gcc -o 05/ioaddr 05/ioaddr.c
