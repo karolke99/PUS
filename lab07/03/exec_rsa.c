@@ -151,15 +151,18 @@ int main(int argc, char **argv) {
 
 /*
  * Funkcja odpowiedzialna za uwierzytelnianie uzytkownika za pomoca metody
- * "password".
+ * "public_key".
  */
 int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd) {
 
     char    *auth_list;
-    char    password[PASS_LEN];
+    char    public_key_path[256] = "public.key";
+    char    private_key_path[256] = "private.key";
+    char    passphrase[PASS_LEN];
 
     /* Pobranie listy metod udostepnianych przez serwer SSH. */
     auth_list = libssh2_userauth_list(session, cd->username, strlen(cd->username));
+    printf("metody servera: %s\n",auth_list);
     if (auth_list == NULL) {
         /*
          *  Jezeli uwierzytelnianie metoda "none" zakonczylo sie
@@ -174,29 +177,34 @@ int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd) {
         }
     }
 
-    /* Sprawdzenie czy serwer obsluguje metode "password". */
-    if (strstr(auth_list, "password") == NULL) {
-        fprintf(stderr, "Password method not supported by server.\n");
+    /* Sprawdzenie czy serwer obsluguje metode "publickey". */
+    if (strstr(auth_list, "publickey") == NULL) {
+        fprintf(stderr, "publickey method not supported by server.\n");
         return -1;
     }
 
-    for (;;) {
+    for (;;) 
+    {
 
         /* Pobranie hasla uzytkownika. */
-        if (get_password("Password: ", password, PASS_LEN)) {
+        if (get_password("Passphrase: ", passphrase, PASS_LEN)) {
             fprintf(stderr, "get_password() failed!\n");
             return -1;
         }
 
         /* Uwierzytelnianie za pomoca hasla. */
-        if (libssh2_userauth_password(session, cd->username, password) == 0) {
+        if (libssh2_userauth_publickey_fromfile(session, cd->username, public_key_path, private_key_path, passphrase) == 0) 
+        {
             fprintf(stdout, "Authentication succeeded!\n");
-            memset(password, 0, PASS_LEN);
+            memset(public_key_path, 0, PASS_LEN);
+            memset(private_key_path, 0, PASS_LEN);
+            memset(passphrase, 0, PASS_LEN);
             break;
-        }  else {
-            fprintf(stdout, "Authentication failed!\n");
+        }  else 
+        {
+            perror("Authentication failed!");
         }
+        sleep(1);
     }
-
     return 0;
 }
