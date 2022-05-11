@@ -9,7 +9,9 @@
 #define BUF_SIZE 4096
 
 /* Funkcja odpowiedzialna za uwierzytelnianie uzytkownika. */
-int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd);
+int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd,
+                    const char* pubkey, const char* privkey,
+                    const char* passphrase);
 
 int main(int argc, char **argv) {
 
@@ -72,7 +74,7 @@ int main(int argc, char **argv) {
     }
 
     /* Uwierzytelnianie uzytkownika. Funkcja zdefiniowana na koncu tego pliku. */
-    err = authenticate_user(session, cd);
+    err = authenticate_user(session, cd, "public.key", "private.key", "passphrase");
     if (err < 0) {
         exit(EXIT_FAILURE);
     }
@@ -153,12 +155,12 @@ int main(int argc, char **argv) {
  * Funkcja odpowiedzialna za uwierzytelnianie uzytkownika za pomoca metody
  * "public_key".
  */
-int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd) {
-
+int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd,
+                        const char* pubkey, const char* privkey,
+                        const char* passphrase) {
+    
     char    *auth_list;
-    char    public_key_path[256] = "public.key";
-    char    private_key_path[256] = "private.key";
-    char    passphrase[PASS_LEN];
+    char    password[PASS_LEN];
 
     /* Pobranie listy metod udostepnianych przez serwer SSH. */
     auth_list = libssh2_userauth_list(session, cd->username, strlen(cd->username));
@@ -186,19 +188,9 @@ int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd) {
     for (;;) 
     {
 
-        /* Pobranie hasla uzytkownika. */
-        if (get_password("Passphrase: ", passphrase, PASS_LEN)) {
-            fprintf(stderr, "get_password() failed!\n");
-            return -1;
-        }
-
-        /* Uwierzytelnianie za pomoca hasla. */
-        if (libssh2_userauth_publickey_fromfile(session, cd->username, public_key_path, private_key_path, passphrase) == 0) 
+        if (libssh2_userauth_publickey_fromfile(session, cd->username, pubkey, privkey, passphrase) == 0) 
         {
             fprintf(stdout, "Authentication succeeded!\n");
-            memset(public_key_path, 0, PASS_LEN);
-            memset(private_key_path, 0, PASS_LEN);
-            memset(passphrase, 0, PASS_LEN);
             break;
         }  else 
         {

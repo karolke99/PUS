@@ -1,5 +1,5 @@
 #!/bin/bash
-ssh-keygen -q -b 2048 -t rsa -C LIBSSH2_KEY -f key1
+ssh-keygen -q -b 2048 -t rsa -N passphrase -C LIBSSH2_KEY -f key
 mv key private.key
 mv key.pub public.key
 echo "1. Copy \"public.key\" file to the \".ssh\" directory in user's home directory."
