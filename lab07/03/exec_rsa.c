@@ -187,7 +187,7 @@ int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd,
     for (;;) 
     {
 
-        /* Uwierzytelnianie za pomoca hasla. */
+        /* Uwierzytelnianie za pomoca publickey. */
         if (libssh2_userauth_publickey_fromfile(session, cd->username, pubkey, privkey, passphrase) == 0) 
         {
             fprintf(stdout, "Authentication succeeded!\n");
