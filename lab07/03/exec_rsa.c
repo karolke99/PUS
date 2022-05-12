@@ -5,7 +5,7 @@
 #include <libssh2.h>
 #include "libcommon.h"
 
-#define PASS_LEN 128
+#define PASS_LEN 256
 #define BUF_SIZE 4096
 
 /* Funkcja odpowiedzialna za uwierzytelnianie uzytkownika. */
@@ -156,11 +156,10 @@ int main(int argc, char **argv) {
  * "public_key".
  */
 int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd,
-                        const char* pubkey, const char* privkey,
-                        const char* passphrase) {
-    
+                    const char* pubkey, const char* privkey,
+                    const char* passphrase) {
+
     char    *auth_list;
-    char    password[PASS_LEN];
 
     /* Pobranie listy metod udostepnianych przez serwer SSH. */
     auth_list = libssh2_userauth_list(session, cd->username, strlen(cd->username));
@@ -188,6 +187,7 @@ int authenticate_user(LIBSSH2_SESSION *session, struct connection_data *cd,
     for (;;) 
     {
 
+        /* Uwierzytelnianie za pomoca hasla. */
         if (libssh2_userauth_publickey_fromfile(session, cd->username, pubkey, privkey, passphrase) == 0) 
         {
             fprintf(stdout, "Authentication succeeded!\n");
