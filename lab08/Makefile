@@ -1,4 +1,4 @@
-all: cipher_ecb cipher_cbc cipher_bio digest mac server client rsa server_rsa client_rsa
+all: cipher_ecb cipher_cbc cipher_bio digest server client rsa server_rsa client_rsa
 
 clean:
 	@rm -rf \
@@ -14,31 +14,31 @@ clean:
 	07/client_rsa
 
 cipher_ecb:
-	gcc -o 01/cipher_ecb -lcrypto 01/cipher_ecb.c
+	gcc -o 01/cipher_ecb 01/cipher_ecb.c -lcrypto
 
 cipher_cbc:
-	gcc -o 02/cipher_cbc -lcrypto 02/cipher_cbc.c
+	gcc -o 02/cipher_cbc 02/cipher_cbc.c -lcrypto
 
 cipher_bio:
-	gcc -o 03/cipher_bio -lcrypto 03/cipher_bio.c
+	gcc -o 03/cipher_bio 03/cipher_bio.c -lcrypto
 
 digest:
-	gcc -o 04/digest -lcrypto 04/digest.c
+	gcc -o 04/digest 04/digest.c -lcrypto
 
 mac:
-	gcc -o 05/mac -lssl 05/mac.c
+	gcc -o 05/mac 05/mac.c -lssl 
 
 server:
-	gcc -o 06/server -lcrypto -lssl 06/server.c
+	gcc -o 06/server 06/server.c -lcrypto -lssl 
 
 client:
-	gcc -o 06/client -lcrypto -lssl 06/client.c
+	gcc -o 06/client 06/client.c -lcrypto -lssl
 
 rsa:
-	gcc -o 07/rsa -lcrypto 07/rsa.c
+	gcc -o 07/rsa 07/rsa.c -lcrypto
 
 server_rsa:
-	gcc -o 07/server_rsa -lcrypto 07/server_rsa.c
+	gcc -o 07/server_rsa 07/server_rsa.c -lcrypto
 
 client_rsa:
-	gcc -o 07/client_rsa -lcrypto 07/client_rsa.c
+	gcc -o 07/client_rsa 07/client_rsa.c -lcrypto

@@ -6,11 +6,15 @@
 #include <unistd.h>     /* close() */
 #include <string.h>
 #include <errno.h>
+#include <openssl/hmac.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 
 int main(int argc, char** argv) {
 
     int             sockfd; /* Deskryptor gniazda. */
     int             retval; /* Wartosc zwracana przez funkcje. */
+    int             tmp;
 
     /* Gniazdowe struktury adresowe (dla klienta i serwera): */
     struct          sockaddr_in client_addr, server_addr;
