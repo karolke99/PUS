@@ -24,11 +24,11 @@ int main(int argc, char** argv) {
 
     char            buff[256] = "Laboratorium PUS.";
 
-    int plaintext_len, cipher_len, hmac_message_len;
+    int plaintext_len, ciphertext_len, hmac_message_len;
 
     unsigned char   ciphertext[1024];
-    unsigned char   hmac_message[1024];
-    unsigned char   hmac[16];
+    char   hmac_message[1024];
+    char   hmac[16];
     int hmac_len;
 
     unsigned char keyA[] = {0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,
@@ -67,7 +67,8 @@ int main(int argc, char** argv) {
     }
 
     /*Obliczanie HMAC: */
-    retval = HMAC_Update(ctx_hmac, buff, strlen(buff));
+    plaintext_len = strlen(buff);
+    retval = HMAC_Update(ctx_hmac, buff, plaintext_len);
     if(!retval) {
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
@@ -107,7 +108,7 @@ int main(int argc, char** argv) {
 
     hmac_message_len = strlen(hmac_message);
 
-    retval = EVP_EncryptUpdate(ctx, ciphertext, &cipher_len,
+    retval = EVP_EncryptUpdate(ctx, ciphertext, &ciphertext_len,
                                 (unsigned char*)hmac_message, hmac_message_len);
 
     if (!retval) {
@@ -115,14 +116,14 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    retval = EVP_EncryptFinal_ex(ctx, ciphertext + cipher_len, &tmp);
+    retval = EVP_EncryptFinal_ex(ctx, ciphertext + ciphertext_len, &tmp);
     if (!retval) {
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
 
     EVP_CIPHER_CTX_free(ctx);
-    cipher_len += tmp;
+    ciphertext_len += tmp;
 
      
 
@@ -157,7 +158,7 @@ int main(int argc, char** argv) {
     /* sendto() wysyla dane na adres okreslony przez strukture 'remote_addr': */
     retval = sendto(
                  sockfd,
-                 buff, strlen(buff),
+                 ciphertext, ciphertext_len,
                  0,
                  (struct sockaddr*)&remote_addr, addr_len
              );
