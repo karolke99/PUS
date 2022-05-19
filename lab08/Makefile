@@ -1,4 +1,4 @@
-all: cipher_ecb cipher_cbc cipher_bio digest server client rsa server_rsa client_rsa
+all: cipher_ecb cipher_cbc cipher_bio digest mac server client rsa server_rsa client_rsa
 
 clean:
 	@rm -rf \
@@ -26,10 +26,10 @@ digest:
 	gcc -o 04/digest 04/digest.c -lcrypto
 
 mac:
-	gcc -o 05/mac 05/mac.c -lssl 
+	gcc -o 05/mac 05/mac.c -lcrypto -lssl
 
 server:
-	gcc -o 06/server 06/server.c -lcrypto -lssl 
+	gcc -o 06/server 06/server.c -lcrypto -lssl
 
 client:
 	gcc -o 06/client 06/client.c -lcrypto -lssl
