@@ -1,10 +1,11 @@
-all: suidserver rootserver daemon
+all: suidserver rootserver daemon fserver
 
 clean: 
 	@rm -fr \
 	01/suidserver \
 	02/rootserver \
-	03/daemon
+	03/daemon \
+	04/fserver
 
 
 suidserver:
@@ -15,4 +16,7 @@ rootserver:
 
 daemon:
 	gcc -o 03/daemon 03/daemon.c
+
+fserver:
+	gcc -o 04/fserver 04/fserver.c
 
