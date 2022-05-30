@@ -40,6 +40,30 @@ void ShowCerts(SSL* ssl)
     }
 }
 
+int verify_callback(int status, X509_STORE_CTX *store) {
+
+    char data[256];
+    int depth;
+    int err;
+
+    if (!status) {
+        X509 *cert = X509_STORE_CTX_get_current_cert(store);
+        depth = X509_STORE_CTX_get_error_depth(store);
+        err = X509_STORE_CTX_get_error(store);
+
+        fprintf(stderr, "Error with certificate at depth: %d\n", depth);
+        X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
+        fprintf(stderr," ISSUER: %s\n", data);
+        X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
+        fprintf(stderr," SUBJECT: %s\n", data);
+
+        fprintf(stderr," ERROR: %d:%s\n", err,
+                X509_verify_cert_error_string(err));
+    }
+
+    return status;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -127,6 +151,15 @@ int main(int argc, char *argv[])
         SSL *ssl;
         int client = accept(server, (struct sockaddr*)&addr, &len);
         printf("Connection: %s:%d\n",inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+
+        //Katalog z zaufanymi certyfikatami
+        if (SSL_CTX_load_verify_locations(ctx, NULL, "cert_dir") != 1) {
+            ERR_print_errors_fp(stderr);
+            exit(EXIT_FAILURE);
+        }        
+
+        // Ustawienie procedury callback weryfikacji certyfikatu
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
 
         /*
          * Utworzenie struktury SSL. Konfiguracja jest kopiowana z kontekstu

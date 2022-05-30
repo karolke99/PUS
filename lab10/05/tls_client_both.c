@@ -91,6 +91,27 @@ int main(int count, char *strings[])
         exit(0);
     }
 
+    // Załadowanie z pliku certyfikatu i przypisanie do kontekstu
+    if ( SSL_CTX_use_certificate_file(ctx, "client_chain.pem", SSL_FILETYPE_PEM) <= 0 )
+    {
+        ERR_print_errors_fp(stderr);
+        exit(0);
+    }
+
+    // Załadowanie z pliku klucza prywatnego i przypisanie do kontekstu
+    if ( SSL_CTX_use_PrivateKey_file(ctx, "client_keypair.pem", SSL_FILETYPE_PEM) <= 0 )
+    {
+        ERR_print_errors_fp(stderr);
+        exit(0);
+    }
+
+    // Weryfikacja, czy klucz prywatny pasuje do certyfikatu
+    if ( !SSL_CTX_check_private_key(ctx) )
+    {
+        fprintf(stderr, "Private key does not match the public certificate\n");
+        exit(0);
+    }
+
 
     // Utworzenie socket i nawiązanie połączenia z serwerem na port TCP
     struct hostent *host;
