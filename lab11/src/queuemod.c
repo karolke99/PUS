@@ -8,6 +8,10 @@
 #include <limits.h> /* Wymagane przez <linux/netfilter_ipv4.h> (MIN_INT, ...) */
 #include <linux/netfilter_ipv4.h> /* Nazwy punktow zaczepienia Netfilter. */
 #include <libnetfilter_queue/libnetfilter_queue.h>
+#include <linux/icmp.h>
+#include <linux/ip.h>
+
+#include "libqueue.h"
 
 static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
                     struct nfq_data *nfa, void *data);
@@ -15,7 +19,7 @@ static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 static u_int32_t print_packet(struct nfq_data *tb);
 
 int main(int argc, char **argv) {
-
+    
     struct nfq_handle       *h; /* Uchwyt polaczenia. */
     struct nfq_q_handle     *qh; /* Uchwyt kolejki. */
     int                     fd; /* Deskryptor gniazda Netlink. */
@@ -105,14 +109,30 @@ static int callback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
     /* Wypisanie informacji na temat pakietu: */
     id = print_packet(nfa);
 
-    fprintf(stdout, "Leaving callback.\n\n");
 
+
+    size_t icmp_header_len = sizeof(struct icmphdr);
+    size_t ip_header_len = sizeof(struct iphdr);
+    
+    unsigned char* buff;
+    size_t data_len = nfq_get_payload(nfa, &buff);
+
+    struct icmphdr *icmp_header = (struct icmphdr*)(buff + ip_header_len);
+
+    char* body = (char *)(buff + icmp_header_len + ip_header_len);
+    size_t body_len = data_len - (icmp_header_len + ip_header_len);
+
+    swap_bytes((unsigned char*) body, body_len);
+    icmp_header->checksum = 0;
+    icmp_header->checksum = internet_checksum((unsigned short *)buff, data_len);
+
+    fprintf(stdout, "Leaving callback.\n\n");
     /*
      * Okreslenie werdyktu.
      * Pakiet nie jest modyfikowany (nie zachodzi koniecznosc podania
      * bufora, w ktorym znajduje sie zmodyfikowany pakiet):
      */
-    return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
+    return nfq_set_verdict(qh, id, NF_ACCEPT, data_len, buff);
 }
 
 
